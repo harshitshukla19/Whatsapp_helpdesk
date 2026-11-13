@@ -1,0 +1,623 @@
+Script started on 2026-09-30 17:06:27+05:30 [TERM="xterm" TTY="/dev/pts/169" COLUMNS="168" LINES="43"]
+[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapp/backend/routesonremotesupport@crm:~/helpdesk_whatsapp/backend/routes$ cd..
+[?2004lcd..: command not found
+[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapp/backend/routesonremotesupport@crm:~/helpdesk_whatsapp/backend/routes$ cd ..
+[?2004l[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapp/backendonremotesupport@crm:~/helpdesk_whatsapp/backend$ scriptcscriptdscript script[C[C[C[C[C[C
+[?2004lbash: cd: script: No such file or directory
+[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapp/backendonremotesupport@crm:~/helpdesk_whatsapp/backend$ cd scripts
+[?2004l[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapp/backend/scriptsonremotesupport@crm:~/helpdesk_whatsapp/backend/scripts$ tree
+[?2004l[01;34m.[0m
+├── pollWebhookDebug.js
+└── [01;32mverify_endpoints.sh[0m
+
+0 directories, 2 files
+[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapp/backend/scriptsonremotesupport@crm:~/helpdesk_whatsapp/backend/scripts$ cd ..
+[?2004l[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapp/backendonremotesupport@crm:~/helpdesk_whatsapp/backend$ cd services
+[?2004l[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapp/backend/servicesonremotesupport@crm:~/helpdesk_whatsapp/backend/services$ tree
+[?2004l[01;34m.[0m
+├── msgclub.service.js
+└── waHelpers.js
+
+0 directories, 2 files
+[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapp/backend/servicesonremotesupport@crm:~/helpdesk_whatsapp/backend/services$ cd ..
+[?2004l[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapp/backendonremotesupport@crm:~/helpdesk_whatsapp/backend$ cd ..
+[?2004l[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapponremotesupport@crm:~/helpdesk_whatsapp$ cd fronte[Kend
+[?2004l[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapp/frontendonremotesupport@crm:~/helpdesk_whatsapp/frontend$ ls
+[?2004l[0m[01;34mdist[0m  index.html  [01;34mnode_modules[0m  package.json  package-lock.json  [01;34mpublic[0m  README.md  [01;34msrc[0m  vite.config.js
+[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapp/frontendonremotesupport@crm:~/helpdesk_whatsapp/frontend$ ls
+[?2004l[0m[01;34mdist[0m  index.html  [01;34mnode_modules[0m  package.json  package-lock.json  [01;34mpublic[0m  README.md  [01;34msrc[0m  vite.config.js
+[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapp/frontendonremotesupport@crm:~/helpdesk_whatsapp/frontend$ ls
+[?2004l[0m[01;34mdist[0m  index.html  [01;34mnode_modules[0m  package.json  package-lock.json  [01;34mpublic[0m  README.md  [01;34msrc[0m  vite.config.js
+[?2004h]0;onremotesupport@crm: ~/helpdesk_whatsapp/frontendonremotesupport@crm:~/helpdesk_whatsapp/frontend$ tree
+[?2004l[01;34m.[0m
+├── [01;34mdist[0m
+│   ├── [01;34massets[0m
+│   │   └── index-DZZPo1Zk.js
+│   ├── [01;35mfavicon.svg[0m
+│   ├── [01;35micons.svg[0m
+│   └── index.html
+├── index.html
+├── [01;34mnode_modules[0m
+│   ├── [01;34mcookie[0m
+│   │   ├── [01;34mdist[0m
+│   │   │   ├── index.d.ts
+│   │   │   ├── index.js
+│   │   │   └── index.js.map
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── [01;34mcsstype[0m
+│   │   ├── index.d.ts
+│   │   ├── index.js.flow
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── [01;34mdetect-libc[0m
+│   │   ├── index.d.ts
+│   │   ├── [01;34mlib[0m
+│   │   │   ├── detect-libc.js
+│   │   │   ├── elf.js
+│   │   │   ├── filesystem.js
+│   │   │   └── process.js
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── [01;34mfdir[0m
+│   │   ├── [01;34mdist[0m
+│   │   │   ├── index.cjs
+│   │   │   ├── index.d.cts
+│   │   │   ├── index.d.mts
+│   │   │   └── index.mjs
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── [01;34mlightningcss[0m
+│   │   ├── LICENSE
+│   │   ├── [01;34mnode[0m
+│   │   │   ├── ast.d.ts
+│   │   │   ├── ast.js.flow
+│   │   │   ├── browserslistToTargets.js
+│   │   │   ├── composeVisitors.js
+│   │   │   ├── flags.js
+│   │   │   ├── index.d.ts
+│   │   │   ├── index.js
+│   │   │   ├── index.js.flow
+│   │   │   ├── index.mjs
+│   │   │   ├── targets.d.ts
+│   │   │   └── targets.js.flow
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── [01;34mlightningcss-linux-x64-gnu[0m
+│   │   ├── LICENSE
+│   │   ├── lightningcss.linux-x64-gnu.node
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── [01;34mnanoid[0m
+│   │   ├── [01;34masync[0m
+│   │   │   ├── index.browser.cjs
+│   │   │   ├── index.browser.js
+│   │   │   ├── index.cjs
+│   │   │   ├── index.d.ts
+│   │   │   ├── index.js
+│   │   │   ├── index.native.js
+│   │   │   └── package.json
+│   │   ├── [01;34mbin[0m
+│   │   │   └── [01;32mnanoid.cjs[0m
+│   │   ├── index.browser.cjs
+│   │   ├── index.browser.js
+│   │   ├── index.cjs
+│   │   ├── index.d.cts
+│   │   ├── index.d.ts
+│   │   ├── index.js
+│   │   ├── LICENSE
+│   │   ├── nanoid.js
+│   │   ├── [01;34mnon-secure[0m
+│   │   │   ├── index.cjs
+│   │   │   ├── index.d.ts
+│   │   │   ├── index.js
+│   │   │   └── package.json
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── [01;34murl-alphabet[0m
+│   │       ├── index.cjs
+│   │       ├── index.js
+│   │       └── package.json
+│   ├── [01;34m@oxc-project[0m
+│   │   └── [01;34mtypes[0m
+│   │       ├── LICENSE
+│   │       ├── package.json
+│   │       ├── README.md
+│   │       └── types.d.ts
+│   ├── [01;34m@oxlint[0m
+│   │   └── [01;34mbinding-linux-x64-gnu[0m
+│   │       ├── oxlint.linux-x64-gnu.node
+│   │       ├── package.json
+│   │       └── README.md
+│   ├── [01;34moxlint[0m
+│   │   ├── [01;34mbin[0m
+│   │   │   └── [01;32moxlint[0m
+│   │   ├── configuration_schema.json
+│   │   ├── [01;34mdist[0m
+│   │   │   ├── bindings.js
+│   │   │   ├── cli.js
+│   │   │   ├── index.d.ts
+│   │   │   ├── index.js
+│   │   │   ├── js_config.js
+│   │   │   ├── lint.js
+│   │   │   ├── plugins-dev.d.ts
+│   │   │   ├── plugins-dev.js
+│   │   │   ├── plugins.js
+│   │   │   ├── utils.js
+│   │   │   ├── workspace2.js
+│   │   │   └── workspace.js
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── [01;34mpicocolors[0m
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   ├── picocolors.browser.js
+│   │   ├── picocolors.d.ts
+│   │   ├── picocolors.js
+│   │   ├── README.md
+│   │   └── types.d.ts
+│   ├── [01;34mpicomatch[0m
+│   │   ├── index.js
+│   │   ├── [01;34mlib[0m
+│   │   │   ├── constants.js
+│   │   │   ├── parse.js
+│   │   │   ├── picomatch.js
+│   │   │   ├── scan.js
+│   │   │   └── utils.js
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   ├── posix.js
+│   │   └── README.md
+│   ├── [01;34mpostcss[0m
+│   │   ├── [01;34mlib[0m
+│   │   │   ├── at-rule.d.ts
+│   │   │   ├── at-rule.js
+│   │   │   ├── comment.d.ts
+│   │   │   ├── comment.js
+│   │   │   ├── container.d.ts
+│   │   │   ├── container.js
+│   │   │   ├── css-syntax-error.d.ts
+│   │   │   ├── css-syntax-error.js
+│   │   │   ├── declaration.d.ts
+│   │   │   ├── declaration.js
+│   │   │   ├── document.d.ts
+│   │   │   ├── document.js
+│   │   │   ├── fromJSON.d.ts
+│   │   │   ├── fromJSON.js
+│   │   │   ├── input.d.ts
+│   │   │   ├── input.js
+│   │   │   ├── lazy-result.d.ts
+│   │   │   ├── lazy-result.js
+│   │   │   ├── list.d.ts
+│   │   │   ├── list.js
+│   │   │   ├── map-generator.js
+│   │   │   ├── node.d.ts
+│   │   │   ├── node.js
+│   │   │   ├── no-work-result.d.ts
+│   │   │   ├── no-work-result.js
+│   │   │   ├── parse.d.ts
+│   │   │   ├── parse.js
+│   │   │   ├── parser.js
+│   │   │   ├── postcss.d.mts
+│   │   │   ├── postcss.d.ts
+│   │   │   ├── postcss.js
+│   │   │   ├── postcss.mjs
+│   │   │   ├── previous-map.d.ts
+│   │   │   ├── previous-map.js
+│   │   │   ├── processor.d.ts
+│   │   │   ├── processor.js
+│   │   │   ├── result.d.ts
+│   │   │   ├── result.js
+│   │   │   ├── root.d.ts
+│   │   │   ├── root.js
+│   │   │   ├── rule.d.ts
+│   │   │   ├── rule.js
+│   │   │   ├── stringifier.d.ts
+│   │   │   ├── stringifier.js
+│   │   │   ├── stringify.d.ts
+│   │   │   ├── stringify.js
+│   │   │   ├── symbols.js
+│   │   │   ├── terminal-highlight.js
+│   │   │   ├── tokenize.js
+│   │   │   ├── warning.d.ts
+│   │   │   ├── warning.js
+│   │   │   └── warn-once.js
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── [01;34mreact[0m
+│   │   ├── [01;34mcjs[0m
+│   │   │   ├── react-compiler-runtime.development.js
+│   │   │   ├── react-compiler-runtime.production.js
+│   │   │   ├── react-compiler-runtime.profiling.js
+│   │   │   ├── react.development.js
+│   │   │   ├── react-jsx-dev-runtime.development.js
+│   │   │   ├── react-jsx-dev-runtime.production.js
+│   │   │   ├── react-jsx-dev-runtime.profiling.js
+│   │   │   ├── react-jsx-dev-runtime.react-server.development.js
+│   │   │   ├── react-jsx-dev-runtime.react-server.production.js
+│   │   │   ├── react-jsx-runtime.development.js
+│   │   │   ├── react-jsx-runtime.production.js
+│   │   │   ├── react-jsx-runtime.profiling.js
+│   │   │   ├── react-jsx-runtime.react-server.development.js
+│   │   │   ├── react-jsx-runtime.react-server.production.js
+│   │   │   ├── react.production.js
+│   │   │   ├── react.react-server.development.js
+│   │   │   └── react.react-server.production.js
+│   │   ├── compiler-runtime.js
+│   │   ├── index.js
+│   │   ├── jsx-dev-runtime.js
+│   │   ├── jsx-dev-runtime.react-server.js
+│   │   ├── jsx-runtime.js
+│   │   ├── jsx-runtime.react-server.js
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   ├── react.react-server.js
+│   │   └── README.md
+│   ├── [01;34mreact-dom[0m
+│   │   ├── [01;34mcjs[0m
+│   │   │   ├── react-dom-client.development.js
+│   │   │   ├── react-dom-client.production.js
+│   │   │   ├── react-dom.development.js
+│   │   │   ├── react-dom.production.js
+│   │   │   ├── react-dom-profiling.development.js
+│   │   │   ├── react-dom-profiling.profiling.js
+│   │   │   ├── react-dom.react-server.development.js
+│   │   │   ├── react-dom.react-server.production.js
+│   │   │   ├── react-dom-server.browser.development.js
+│   │   │   ├── react-dom-server.browser.production.js
+│   │   │   ├── react-dom-server.bun.development.js
+│   │   │   ├── react-dom-server.bun.production.js
+│   │   │   ├── react-dom-server.edge.development.js
+│   │   │   ├── react-dom-server.edge.production.js
+│   │   │   ├── react-dom-server-legacy.browser.development.js
+│   │   │   ├── react-dom-server-legacy.browser.production.js
+│   │   │   ├── react-dom-server-legacy.node.development.js
+│   │   │   ├── react-dom-server-legacy.node.production.js
+│   │   │   ├── react-dom-server.node.development.js
+│   │   │   ├── react-dom-server.node.production.js
+│   │   │   ├── react-dom-test-utils.development.js
+│   │   │   └── react-dom-test-utils.production.js
+│   │   ├── client.js
+│   │   ├── client.react-server.js
+│   │   ├── index.js
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   ├── profiling.js
+│   │   ├── profiling.react-server.js
+│   │   ├── react-dom.react-server.js
+│   │   ├── README.md
+│   │   ├── server.browser.js
+│   │   ├── server.bun.js
+│   │   ├── server.edge.js
+│   │   ├── server.js
+│   │   ├── server.node.js
+│   │   ├── server.react-server.js
+│   │   ├── static.browser.js
+│   │   ├── static.edge.js
+│   │   ├── static.js
+│   │   ├── static.node.js
+│   │   ├── static.react-server.js
+│   │   └── test-utils.js
+│   ├── [01;34mreact-router[0m
+│   │   ├── CHANGELOG.md
+│   │   ├── [01;34mdist[0m
+│   │   │   ├── [01;34mdevelopment[0m
+│   │   │   │   ├── browser-Cv4JZyZ5.d.mts
+│   │   │   │   ├── browser-o-qhcuhA.d.ts
+│   │   │   │   ├── chunk-2JY4UAJA.js
+│   │   │   │   ├── chunk-GNDLROV6.js
+│   │   │   │   ├── chunk-JMJ3UQ3L.mjs
+│   │   │   │   ├── chunk-SZQUWNVJ.js
+│   │   │   │   ├── chunk-YNUBSHFH.mjs
+│   │   │   │   ├── dom-export.d.mts
+│   │   │   │   ├── dom-export.d.ts
+│   │   │   │   ├── dom-export.js
+│   │   │   │   ├── dom-export.mjs
+│   │   │   │   ├── index.d.mts
+│   │   │   │   ├── index.d.ts
+│   │   │   │   ├── index.js
+│   │   │   │   ├── index.mjs
+│   │   │   │   ├── index-react-server-client-Cv5Q9lf0.d.ts
+│   │   │   │   ├── index-react-server-client.d.mts
+│   │   │   │   ├── index-react-server-client.d.ts
+│   │   │   │   ├── index-react-server-client.js
+│   │   │   │   ├── index-react-server-client.mjs
+│   │   │   │   ├── index-react-server-client-P7VgYu6T.d.mts
+│   │   │   │   ├── index-react-server.d.mts
+│   │   │   │   ├── index-react-server.d.ts
+│   │   │   │   ├── index-react-server.js
+│   │   │   │   ├── index-react-server.mjs
+│   │   │   │   ├── instrumentation-BlrVzjbg.d.ts
+│   │   │   │   ├── [01;34mlib[0m
+│   │   │   │   │   └── [01;34mtypes[0m
+│   │   │   │   │       ├── internal.d.mts
+│   │   │   │   │       ├── internal.d.ts
+│   │   │   │   │       ├── internal.js
+│   │   │   │   │       └── internal.mjs
+│   │   │   │   ├── register-BGQUMCK4.d.ts
+│   │   │   │   ├── register-DTJJbt1o.d.mts
+│   │   │   │   └── router-5fbeEIMQ.d.mts
+│   │   │   └── [01;34mproduction[0m
+│   │   │       ├── browser-Cv4JZyZ5.d.mts
+│   │   │       ├── browser-o-qhcuhA.d.ts
+│   │   │       ├── chunk-2HFJAX7U.js
+│   │   │       ├── chunk-BEXOWXJO.js
+│   │   │       ├── chunk-E6GYEQUT.mjs
+│   │   │       ├── chunk-TINMVEA2.mjs
+│   │   │       ├── chunk-ZMYPVUNZ.js
+│   │   │       ├── dom-export.d.mts
+│   │   │       ├── dom-export.d.ts
+│   │   │       ├── dom-export.js
+│   │   │       ├── dom-export.mjs
+│   │   │       ├── index.d.mts
+│   │   │       ├── index.d.ts
+│   │   │       ├── index.js
+│   │   │       ├── index.mjs
+│   │   │       ├── index-react-server-client-Cv5Q9lf0.d.ts
+│   │   │       ├── index-react-server-client.d.mts
+│   │   │       ├── index-react-server-client.d.ts
+│   │   │       ├── index-react-server-client.js
+│   │   │       ├── index-react-server-client.mjs
+│   │   │       ├── index-react-server-client-P7VgYu6T.d.mts
+│   │   │       ├── index-react-server.d.mts
+│   │   │       ├── index-react-server.d.ts
+│   │   │       ├── index-react-server.js
+│   │   │       ├── index-react-server.mjs
+│   │   │       ├── instrumentation-BlrVzjbg.d.ts
+│   │   │       ├── [01;34mlib[0m
+│   │   │       │   └── [01;34mtypes[0m
+│   │   │       │       ├── internal.d.mts
+│   │   │       │       ├── internal.d.ts
+│   │   │       │       ├── internal.js
+│   │   │       │       └── internal.mjs
+│   │   │       ├── register-BGQUMCK4.d.ts
+│   │   │       ├── register-DTJJbt1o.d.mts
+│   │   │       └── router-5fbeEIMQ.d.mts
+│   │   ├── LICENSE.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── [01;34mreact-router-dom[0m
+│   │   ├── [01;34mdist[0m
+│   │   │   ├── index.d.mts
+│   │   │   ├── index.d.ts
+│   │   │   ├── index.js
+│   │   │   └── index.mjs
+│   │   ├── LICENSE.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── [01;34m@rolldown[0m
+│   │   ├── [01;34mbinding-linux-x64-gnu[0m
+│   │   │   ├── package.json
+│   │   │   ├── README.md
+│   │   │   └── rolldown-binding.linux-x64-gnu.node
+│   │   └── [01;34mpluginutils[0m
+│   │       ├── [01;34mdist[0m
+│   │       │   ├── [01;34mfilter[0m
+│   │       │   │   ├── index.d.mts
+│   │       │   │   └── index.mjs
+│   │       │   ├── filter-B_mD-HGz.mjs
+│   │       │   ├── index.d.mts
+│   │       │   └── index.mjs
+│   │       ├── LICENSE
+│   │       ├── package.json
+│   │       └── README.md
+│   ├── [01;34mrolldown[0m
+│   │   ├── [01;34mbin[0m
+│   │   │   └── [01;32mcli.mjs[0m
+│   │   ├── [01;34mdist[0m
+│   │   │   ├── cli.d.mts
+│   │   │   ├── cli.mjs
+│   │   │   ├── config.d.mts
+│   │   │   ├── config.mjs
+│   │   │   ├── experimental-index.d.mts
+│   │   │   ├── experimental-index.mjs
+│   │   │   ├── experimental-runtime-types.d.ts
+│   │   │   ├── filter-index.d.mts
+│   │   │   ├── filter-index.mjs
+│   │   │   ├── get-log-filter.d.mts
+│   │   │   ├── get-log-filter.mjs
+│   │   │   ├── index.d.mts
+│   │   │   ├── index.mjs
+│   │   │   ├── parallel-plugin.d.mts
+│   │   │   ├── parallel-plugin.mjs
+│   │   │   ├── parallel-plugin-worker.d.mts
+│   │   │   ├── parallel-plugin-worker.mjs
+│   │   │   ├── parse-ast-index.d.mts
+│   │   │   ├── parse-ast-index.mjs
+│   │   │   ├── plugins-index.d.mts
+│   │   │   ├── plugins-index.mjs
+│   │   │   ├── [01;34mshared[0m
+│   │   │   │   ├── binding-D26QphWG.d.mts
+│   │   │   │   ├── bindingify-input-options-XPJLJOD0.mjs
+│   │   │   │   ├── binding-TuFFIE_J.mjs
+│   │   │   │   ├── constructors-BbWPse2X.d.mts
+│   │   │   │   ├── constructors-D_3i7dpX.mjs
+│   │   │   │   ├── define-config-BhJ90aEv.d.mts
+│   │   │   │   ├── define-config-Demdg3_4.mjs
+│   │   │   │   ├── dist-DKbukT1H.mjs
+│   │   │   │   ├── error-BHRSI0R7.mjs
+│   │   │   │   ├── get-log-filter-BpNVNJ5-.d.mts
+│   │   │   │   ├── load-config-BL_FI6dc.mjs
+│   │   │   │   ├── logging-BSNejiLS.d.mts
+│   │   │   │   ├── logs-ZGEh6uhb.mjs
+│   │   │   │   ├── misc-CoQm4NHO.mjs
+│   │   │   │   ├── normalize-string-or-regex-dnh67V_w.mjs
+│   │   │   │   ├── parse-D4dtlfWy.mjs
+│   │   │   │   ├── prompt--dNycKSZ.mjs
+│   │   │   │   ├── resolve-tsconfig-DxqIJB3x.mjs
+│   │   │   │   ├── rolldown-build-CtPvmZgJ.mjs
+│   │   │   │   ├── rolldown-ChpIlMRm.mjs
+│   │   │   │   ├── transform-BPrUvqEZ.d.mts
+│   │   │   │   └── watch-B1b0gmVh.mjs
+│   │   │   ├── utils-index.d.mts
+│   │   │   └── utils-index.mjs
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── [01;34mscheduler[0m
+│   │   ├── [01;34mcjs[0m
+│   │   │   ├── scheduler.development.js
+│   │   │   ├── scheduler.native.development.js
+│   │   │   ├── scheduler.native.production.js
+│   │   │   ├── scheduler.production.js
+│   │   │   ├── scheduler-unstable_mock.development.js
+│   │   │   ├── scheduler-unstable_mock.production.js
+│   │   │   ├── scheduler-unstable_post_task.development.js
+│   │   │   └── scheduler-unstable_post_task.production.js
+│   │   ├── index.js
+│   │   ├── index.native.js
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   ├── unstable_mock.js
+│   │   └── unstable_post_task.js
+│   ├── [01;34mset-cookie-parser[0m
+│   │   ├── [01;34mlib[0m
+│   │   │   └── set-cookie.js
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── [01;34msource-map-js[0m
+│   │   ├── [01;34mlib[0m
+│   │   │   ├── array-set.js
+│   │   │   ├── base64.js
+│   │   │   ├── base64-vlq.js
+│   │   │   ├── binary-search.js
+│   │   │   ├── mapping-list.js
+│   │   │   ├── quick-sort.js
+│   │   │   ├── source-map-consumer.d.ts
+│   │   │   ├── source-map-consumer.js
+│   │   │   ├── source-map-generator.d.ts
+│   │   │   ├── source-map-generator.js
+│   │   │   ├── source-node.d.ts
+│   │   │   ├── source-node.js
+│   │   │   └── util.js
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   ├── source-map.d.ts
+│   │   └── source-map.js
+│   ├── [01;34mtinyglobby[0m
+│   │   ├── [01;34mdist[0m
+│   │   │   ├── index.cjs
+│   │   │   ├── index.d.cts
+│   │   │   ├── index.d.mts
+│   │   │   └── index.mjs
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── [01;34m@types[0m
+│   │   ├── [01;34mreact[0m
+│   │   │   ├── canary.d.ts
+│   │   │   ├── compiler-runtime.d.ts
+│   │   │   ├── experimental.d.ts
+│   │   │   ├── global.d.ts
+│   │   │   ├── index.d.ts
+│   │   │   ├── jsx-dev-runtime.d.ts
+│   │   │   ├── jsx-runtime.d.ts
+│   │   │   ├── LICENSE
+│   │   │   ├── package.json
+│   │   │   ├── README.md
+│   │   │   └── [01;34mts5.0[0m
+│   │   │       ├── canary.d.ts
+│   │   │       ├── experimental.d.ts
+│   │   │       ├── global.d.ts
+│   │   │       ├── index.d.ts
+│   │   │       ├── jsx-dev-runtime.d.ts
+│   │   │       └── jsx-runtime.d.ts
+│   │   └── [01;34mreact-dom[0m
+│   │       ├── canary.d.ts
+│   │       ├── client.d.ts
+│   │       ├── experimental.d.ts
+│   │       ├── index.d.ts
+│   │       ├── LICENSE
+│   │       ├── package.json
+│   │       ├── README.md
+│   │       ├── server.browser.d.ts
+│   │       ├── server.bun.d.ts
+│   │       ├── server.d.ts
+│   │       ├── server.edge.d.ts
+│   │       ├── server.node.d.ts
+│   │       ├── static.browser.d.ts
+│   │       ├── static.d.ts
+│   │       ├── static.edge.d.ts
+│   │       ├── static.node.d.ts
+│   │       └── [01;34mtest-utils[0m
+│   │           └── index.d.ts
+│   ├── [01;34mvite[0m
+│   │   ├── [01;34mbin[0m
+│   │   │   ├── openChrome.js
+│   │   │   └── [01;32mvite.js[0m
+│   │   ├── client.d.ts
+│   │   ├── [01;34mdist[0m
+│   │   │   ├── [01;34mclient[0m
+│   │   │   │   ├── client.mjs
+│   │   │   │   └── env.mjs
+│   │   │   └── [01;34mnode[0m
+│   │   │       ├── [01;34mchunks[0m
+│   │   │       │   ├── build.js
+│   │   │       │   ├── dist.js
+│   │   │       │   ├── lib.js
+│   │   │       │   ├── moduleRunnerTransport.d.ts
+│   │   │       │   ├── node.js
+│   │   │       │   └── postcss-import.js
+│   │   │       ├── cli.js
+│   │   │       ├── index.d.ts
+│   │   │       ├── index.js
+│   │   │       ├── internal.d.ts
+│   │   │       ├── internal.js
+│   │   │       ├── module-runner.d.ts
+│   │   │       └── module-runner.js
+│   │   ├── LICENSE.md
+│   │   ├── [01;34mmisc[0m
+│   │   │   ├── false.js
+│   │   │   └── true.js
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── [01;34mtypes[0m
+│   │       ├── customEvent.d.ts
+│   │       ├── hmrPayload.d.ts
+│   │       ├── hot.d.ts
+│   │       ├── importGlob.d.ts
+│   │       ├── import-meta.d.ts
+│   │       ├── importMeta.d.ts
+│   │       ├── [01;34minternal[0m
+│   │       │   ├── cssPreprocessorOptions.d.ts
+│   │       │   ├── esbuildOptions.d.ts
+│   │       │   ├── lightningcssOptions.d.ts
+│   │       │   ├── rollupTypeCompat.d.ts
+│   │       │   └── terserOptions.d.ts
+│   │       └── metadata.d.ts
+│   └── [01;34m@vitejs[0m
+│       └── [01;34mplugin-react[0m
+│           ├── [01;34mdist[0m
+│           │   ├── index.d.ts
+│           │   ├── index.js
+│           │   └── refresh-runtime.js
+│           ├── LICENSE
+│           ├── package.json
+│           ├── README.md
+│           └── [01;34mtypes[0m
+│               ├── optionalTypes.d.ts
+│               └── preamble.d.ts
+├── package.json
+├── package-lock.json
+├── [01;34mpublic[0m
+│   ├── [01;35mfavicon.svg[0m
+│   └── [01;35micons.svg[0m
+├── README.md
+├── [01;34msrc[0m
+│   ├── [01;34mapi[0m
+│   │   └── api.js
+│   ├── App.css
+│   ├── App.jsx
+│   ├── [01;34massets[0m
+│   │   ├── [01;35mhero.png[0m
+│   │   ├── [01;35mreact.svg[0m
+│   │   └── [01;35mvi
