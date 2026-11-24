@@ -1,5 +1,13 @@
 const { getPool, sql } = require('../config/db');
-const { sendTicketAcknowledgement, sendTextMessage } = require('../config/whatsapp');
+const {
+  sendTicketAcknowledgement,
+  sendTextMessage,
+  sendTemplateMessage,
+  sendMediaMessage,
+  sendLocationMessage,
+  sendContactMessage,
+} = require('../config/whatsapp');
+const { isWindowOpenForMobile } = require('../services/waHelpers');
 
 /**
  * PUBLIC: Customer submits a new query -> creates a ticket,
@@ -180,11 +188,11 @@ async function getTicketThreadInternal(req, res) {
 async function addAgentMessage(req, res) {
   try {
     const { id } = req.params;
-    const { message } = req.body;
+    const { message, templateName, mediaUrl, mediaType, location, contact } = req.body;
     const agentName = req.user?.username || 'Agent';
 
-    if (!message) {
-      return res.status(400).json({ success: false, message: 'message is required' });
+    if (!message && !templateName && !mediaUrl && !location && !contact) {
+      return res.status(400).json({ success: false, message: 'message, media, or templateName is required' });
     }
 
     const pool = await getPool();
@@ -198,39 +206,105 @@ async function addAgentMessage(req, res) {
       return res.status(404).json({ success: false, message: 'Ticket not found' });
     }
 
-    // Push the reply out over WhatsApp. This only works inside the 24h
-    // session window opened by the customer's last incoming message -
-    // MsgClub will reject/no-op sends outside that window. We still save
-    // the message either way, but flag sendFailed so the UI can warn the agent.
     let waMessageId = null;
     let sendFailed = false;
+    let usedTemplate = false;
+    let computedMediaUrl = mediaUrl || null;
+    let finalMsgType = 'text';
+
     try {
-      const waResult = await sendTextMessage(ticket.MobileNumber, message);
+      let waResult;
+      if (location || mediaType === 'location') {
+        finalMsgType = 'location';
+        const locObj = typeof location === 'object' ? location : JSON.parse(message || '{}');
+        computedMediaUrl = `https://maps.google.com/?q=${locObj.latitude},${locObj.longitude}`;
+        waResult = await sendLocationMessage(ticket.MobileNumber, locObj);
+      } else if (contact || mediaType === 'contact') {
+        finalMsgType = 'contact';
+        const conObj = typeof contact === 'object' ? contact : JSON.parse(message || '{}');
+        computedMediaUrl = conObj.phone ? `tel:${conObj.phone}` : null;
+        waResult = await sendContactMessage(ticket.MobileNumber, conObj);
+      } else if (mediaUrl) {
+        finalMsgType = mediaType || 'image';
+        waResult = await sendMediaMessage(ticket.MobileNumber, finalMsgType, mediaUrl, message || '');
+      } else if (templateName && templateName !== 'ticket_acknowledgement') {
+        usedTemplate = true;
+        finalMsgType = 'template';
+        waResult = await sendTemplateMessage({
+          mobileNumber: ticket.MobileNumber,
+          templateName,
+          language: 'en'
+        });
+      } else {
+        // Send free-form text as is (e.g. "hi") - do NOT force-replace with welcome_msg!
+        finalMsgType = 'text';
+        waResult = await sendTextMessage(ticket.MobileNumber, message);
+      }
+
       waMessageId =
+        waResult?.requestId ||
+        waResult?.response ||
         waResult?.messages?.[0]?.id ||
         waResult?.messageId ||
-        waResult?.response ||
         null;
-      if (!waMessageId) {
+
+      if (!waMessageId || waResult?.success === false) {
         sendFailed = true;
-        console.warn('WhatsApp reply send: no message id in response, check 24h window / payload shape:', waResult);
+        console.warn('WhatsApp send rejected or no request id:', waResult);
       }
     } catch (waErr) {
       sendFailed = true;
-      console.error('WhatsApp reply send failed:', waErr);
+      console.error('WhatsApp send failed:', waErr);
     }
+
+    const storedText = usedTemplate
+      ? (message ? `${message}\n[WhatsApp Template: ${templateName}]` : `[WhatsApp Template: ${templateName}]`)
+      : (message || (computedMediaUrl ? `[Media: ${finalMsgType}]` : ''));
 
     const result = await pool.request()
       .input('TicketID', sql.VarChar(20), id)
       .input('SenderType', sql.VarChar(10), 'Agent')
       .input('SenderName', sql.NVarChar(100), agentName)
-      .input('MessageText', sql.NVarChar(sql.MAX), message)
-      .input('MessageType', sql.VarChar(20), 'text')
-      .input('MediaURL', sql.NVarChar(500), null)
+      .input('MessageText', sql.NVarChar(sql.MAX), storedText)
+      .input('MessageType', sql.VarChar(20), finalMsgType)
+      .input('MediaURL', sql.NVarChar(500), computedMediaUrl)
       .input('WaMessageId', sql.VarChar(100), waMessageId)
       .execute('usp_AddMessage');
 
-    return res.json({ success: true, sendFailed, data: result.recordset });
+    // Sync to WhatsAppConversations & WhatsAppMessages
+    try {
+      const convUpsert = await pool.request()
+        .input('CustomerMobile', sql.VarChar(20), ticket.MobileNumber)
+        .input('CustomerName', sql.VarChar(100), ticket.CustomerName || null)
+        .input('LastMessageText', sql.VarChar(500), storedText.slice(0, 500))
+        .input('IncrementUnread', sql.Bit, 0)
+        .output('ConversationId', sql.Int)
+        .execute('usp_WhatsApp_UpsertConversation');
+
+      const convId = convUpsert.output.ConversationId;
+      await pool.request()
+        .input('ConversationId', sql.Int, convId)
+        .input('Direction', sql.VarChar(3), 'OUT')
+        .input('MessageType', sql.VarChar(20), finalMsgType)
+        .input('Content', sql.NVarChar(sql.MAX), storedText)
+        .input('MediaUrl', sql.VarChar(1000), computedMediaUrl)
+        .input('RequestId', sql.VarChar(100), waMessageId)
+        .input('DeliveryStatus', sql.VarChar(20), sendFailed ? 'failed' : 'sent')
+        .input('AgentId', sql.Int, null)
+        .input('ClientTempId', sql.VarChar(50), null)
+        .output('MessageId', sql.Int)
+        .execute('usp_WhatsApp_InsertMessage');
+    } catch (syncErr) {
+      console.warn('[addAgentMessage] WhatsApp inbox sync error:', syncErr.message);
+    }
+
+    return res.json({
+      success: true,
+      sendFailed,
+      usedTemplate,
+      requestId: waMessageId,
+      data: result.recordset
+    });
   } catch (err) {
     console.error('addAgentMessage error:', err);
     return res.status(500).json({ success: false, message: 'Failed to add message' });
@@ -245,11 +319,11 @@ async function addAgentMessage(req, res) {
  */
 async function startNewConversation(req, res) {
   try {
-    const { mobileNumber, customerName, message } = req.body;
+    const { mobileNumber, customerName, message, templateName, mediaUrl, mediaType, location, contact } = req.body;
     const agentName = req.user?.username || 'Agent';
 
-    if (!mobileNumber || !message) {
-      return res.status(400).json({ success: false, message: 'mobileNumber and message are required' });
+    if (!mobileNumber || (!message && !templateName && !mediaUrl && !location && !contact)) {
+      return res.status(400).json({ success: false, message: 'mobileNumber and message content are required' });
     }
 
     const pool = await getPool();
@@ -287,32 +361,123 @@ async function startNewConversation(req, res) {
 
     let waMessageId = null;
     let sendFailed = false;
+    let usedTemplate = false;
+    let computedMediaUrl = mediaUrl || null;
+    let finalMsgType = 'text';
+
     try {
-      const waResult = await sendTextMessage(mobileNumber, message);
-      waMessageId = waResult?.messages?.[0]?.id || waResult?.response || null;
-      if (!waMessageId) sendFailed = true;
+      let waResult;
+      if (location || mediaType === 'location') {
+        finalMsgType = 'location';
+        const locObj = typeof location === 'object' ? location : JSON.parse(message || '{}');
+        computedMediaUrl = `https://maps.google.com/?q=${locObj.latitude},${locObj.longitude}`;
+        waResult = await sendLocationMessage(mobileNumber, locObj);
+      } else if (contact || mediaType === 'contact') {
+        finalMsgType = 'contact';
+        const conObj = typeof contact === 'object' ? contact : JSON.parse(message || '{}');
+        computedMediaUrl = conObj.phone ? `tel:${conObj.phone}` : null;
+        waResult = await sendContactMessage(mobileNumber, conObj);
+      } else if (mediaUrl) {
+        finalMsgType = mediaType || 'image';
+        waResult = await sendMediaMessage(mobileNumber, finalMsgType, mediaUrl, message || '');
+      } else if (templateName && templateName !== 'ticket_acknowledgement') {
+        usedTemplate = true;
+        finalMsgType = 'template';
+        waResult = await sendTemplateMessage({
+          mobileNumber,
+          templateName,
+          language: 'en'
+        });
+      } else {
+        // Send free-form text directly
+        finalMsgType = 'text';
+        waResult = await sendTextMessage(mobileNumber, message);
+      }
+
+      waMessageId =
+        waResult?.requestId ||
+        waResult?.response ||
+        waResult?.messages?.[0]?.id ||
+        null;
+
+      if (!waMessageId || waResult?.success === false) sendFailed = true;
     } catch (waErr) {
       console.error('startNewConversation send failed:', waErr);
       sendFailed = true;
     }
 
+    const storedText = usedTemplate
+      ? (message ? `${message}\n[WhatsApp Template: ${templateName}]` : `[WhatsApp Template: ${templateName}]`)
+      : (message || (computedMediaUrl ? `[Media: ${finalMsgType}]` : ''));
+
     const result = await pool.request()
       .input('TicketID', sql.VarChar(20), ticketId)
       .input('SenderType', sql.VarChar(10), 'Agent')
       .input('SenderName', sql.NVarChar(100), agentName)
-      .input('MessageText', sql.NVarChar(sql.MAX), message)
-      .input('MessageType', sql.VarChar(20), 'text')
-      .input('MediaURL', sql.NVarChar(500), null)
+      .input('MessageText', sql.NVarChar(sql.MAX), storedText)
+      .input('MessageType', sql.VarChar(20), finalMsgType)
+      .input('MediaURL', sql.NVarChar(500), computedMediaUrl)
       .input('WaMessageId', sql.VarChar(100), waMessageId)
       .execute('usp_AddMessage');
 
+    // Sync to WhatsAppConversations & WhatsAppMessages
+    try {
+      const convUpsert = await pool.request()
+        .input('CustomerMobile', sql.VarChar(20), mobileNumber)
+        .input('CustomerName', sql.VarChar(100), customerName || null)
+        .input('LastMessageText', sql.VarChar(500), storedText.slice(0, 500))
+        .input('IncrementUnread', sql.Bit, 0)
+        .output('ConversationId', sql.Int)
+        .execute('usp_WhatsApp_UpsertConversation');
+
+      const convId = convUpsert.output.ConversationId;
+      await pool.request()
+        .input('ConversationId', sql.Int, convId)
+        .input('Direction', sql.VarChar(3), 'OUT')
+        .input('MessageType', sql.VarChar(20), finalMsgType)
+        .input('Content', sql.NVarChar(sql.MAX), storedText)
+        .input('MediaUrl', sql.VarChar(1000), computedMediaUrl)
+        .input('RequestId', sql.VarChar(100), waMessageId)
+        .input('DeliveryStatus', sql.VarChar(20), sendFailed ? 'failed' : 'sent')
+        .input('AgentId', sql.Int, null)
+        .input('ClientTempId', sql.VarChar(50), null)
+        .output('MessageId', sql.Int)
+        .execute('usp_WhatsApp_InsertMessage');
+    } catch (syncErr) {
+      console.warn('[startNewConversation] WhatsApp inbox sync error:', syncErr.message);
+    }
+
     return res.json({
       success: true,
-      data: { ticketId, isNewTicket, sendFailed, messages: result.recordset }
+      data: {
+        ticketId,
+        isNewTicket,
+        sendFailed,
+        usedTemplate,
+        requestId: waMessageId,
+      }
     });
   } catch (err) {
     console.error('startNewConversation error:', err);
     return res.status(500).json({ success: false, message: 'Failed to start conversation' });
+  }
+}
+
+// DELETE /api/internal/tickets/:id
+async function deleteTicket(req, res) {
+  const { id } = req.params;
+  try {
+    const pool = await getPool();
+    await pool.request()
+      .input('TicketID', sql.VarChar(20), id)
+      .query(`
+        DELETE FROM TicketMessages WHERE TicketID = @TicketID;
+        DELETE FROM Tickets WHERE TicketID = @TicketID;
+      `);
+    return res.json({ success: true, message: 'Ticket deleted successfully' });
+  } catch (err) {
+    console.error('[deleteTicket]', err);
+    return res.status(500).json({ success: false, message: 'Failed to delete ticket' });
   }
 }
 
@@ -352,5 +517,6 @@ module.exports = {
   getTicketThreadInternal,
   addAgentMessage,
   updateTicketStatus,
-  startNewConversation
+  startNewConversation,
+  deleteTicket,
 };

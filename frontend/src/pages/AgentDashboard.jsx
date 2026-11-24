@@ -8,7 +8,8 @@ import {
   getTicketThreadInternal,
   addAgentMessage,
   updateTicketStatus,
-  startNewConversation
+  startNewConversation,
+  deleteTicket,
 } from '../api/api.js';
 
 const POLL_MS = 6000;
@@ -89,8 +90,12 @@ export default function AgentDashboard() {
     return () => clearInterval(interval);
   }, [activeTicketId, refreshActiveThread]);
 
-  async function handleSendReply(text) {
+  async function handleSendReply(payloadOrText) {
     setReplyError('');
+
+    const text = typeof payloadOrText === 'string' ? payloadOrText : (payloadOrText?.text || '');
+    const mediaUrl = typeof payloadOrText === 'object' ? payloadOrText?.mediaUrl : null;
+    const mediaType = typeof payloadOrText === 'object' ? (payloadOrText?.mediaType || 'image') : 'text';
 
     const clientTempId = genTempId();
     pendingTempIds.current.add(clientTempId);
@@ -103,9 +108,9 @@ export default function AgentDashboard() {
         MessageID: `optimistic_${clientTempId}`,
         SenderType: 'Agent',
         SenderName: null,
-        MessageText: text,
-        MessageType: 'text',
-        MediaURL: null,
+        MessageText: text || (mediaUrl ? `[Media: ${mediaType}]` : ''),
+        MessageType: mediaUrl ? mediaType : 'text',
+        MediaURL: mediaUrl,
         DeliveryStatus: 'sending',
         CreatedAt: new Date().toISOString(),
         clientTempId,
@@ -113,9 +118,13 @@ export default function AgentDashboard() {
     ]);
 
     try {
-      const res = await addAgentMessage(token, activeTicketId, text);
+      const res = await addAgentMessage(token, activeTicketId, {
+        message: text,
+        mediaUrl,
+        mediaType,
+      });
       if (res.sendFailed) {
-        setReplyError('Message saved, but WhatsApp delivery failed — the customer may be outside the 24h reply window.');
+        setReplyError('Message saved, but WhatsApp delivery failed.');
         setMessages((prev) =>
           prev.map((m) => (m.clientTempId === clientTempId ? { ...m, DeliveryStatus: 'Failed' } : m))
         );
@@ -167,6 +176,22 @@ export default function AgentDashboard() {
     await updateTicketStatus(token, activeTicketId, newStatus);
     refreshActiveThread();
     refreshTickets();
+  }
+
+  async function handleDeleteTicket() {
+    if (!activeTicketId) return;
+    const ok = window.confirm(`Delete Ticket #${activeTicketId}? This will remove the ticket and its chat history.`);
+    if (!ok) return;
+
+    try {
+      await deleteTicket(token, activeTicketId);
+      setTickets((prev) => prev.filter((t) => t.TicketID !== activeTicketId));
+      setActiveTicketId(null);
+      setActiveTicket(null);
+      setMessages([]);
+    } catch (err) {
+      alert(err.message || 'Failed to delete ticket');
+    }
   }
 
   const visibleTickets = tickets.filter((t) => {
@@ -330,7 +355,7 @@ export default function AgentDashboard() {
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <StatusBadge status={activeTicket.Status} />
                 <select
-                  style={{ ...s.input, width: 150 }}
+                  style={{ ...s.input, width: 140 }}
                   value={activeTicket.Status}
                   onChange={(e) => handleStatusChange(e.target.value)}
                 >
@@ -338,6 +363,26 @@ export default function AgentDashboard() {
                     <option key={st} value={st}>{st}</option>
                   ))}
                 </select>
+                <button
+                  type="button"
+                  onClick={handleDeleteTicket}
+                  title="Delete this ticket"
+                  style={{
+                    background: 'transparent',
+                    border: `1px solid ${c.border}`,
+                    color: c.danger,
+                    borderRadius: 8,
+                    padding: '7px 11px',
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  🗑️ Delete
+                </button>
               </div>
             </div>
             <div style={{ flex: 1, minHeight: 0 }}>
@@ -347,6 +392,7 @@ export default function AgentDashboard() {
                 selfSenderType="Agent"
                 placeholder="Reply to customer..."
                 sendError={replyError}
+                token={token}
               />
             </div>
           </>

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && rm -rf dist/uploads && ln -s /home/onremotesupport/helpdesk_whatsapp/backend/uploads dist/uploads",
     "lint": "oxlint",
     "preview": "vite preview"
   },

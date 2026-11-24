@@ -1,6 +1,9 @@
 const { getPool, sql } = require('../config/db');
 const { sendTicketAcknowledgement } = require('../config/whatsapp');
-/** Find the most recent ticket for this mobile number, or create a new one. */
+
+/**
+ * Find the most recent ticket for this mobile number, or create a new one.
+ */
 async function getOrCreateTicketForMobile(pool, mobile) {
   const existing = await pool
     .request()
@@ -32,7 +35,7 @@ async function getOrCreateTicketForMobile(pool, mobile) {
       VALUES (@TicketID, NULL, @MobileNumber, @Subject, 'Open')
     `);
 
-  // Fires exactly once - only reached on brand-new ticket creation.
+  // Fire-and-forget ticket acknowledgement
   sendTicketAcknowledgement(mobile, ticketId).catch((err) =>
     console.error(`[getOrCreateTicketForMobile] ack send failed for ${ticketId}:`, err)
   );
@@ -40,7 +43,12 @@ async function getOrCreateTicketForMobile(pool, mobile) {
   return ticketId;
 }
 
+/**
+ * MsgClub WhatsApp Webhook endpoint handler
+ * POST /api/webhooks/msgclub/messages
+ */
 async function whatsappWebhookHandler(req, res) {
+  // Always acknowledge immediately to MsgClub
   res.status(200).json({ success: true });
 
   const body = req.body || {};
@@ -49,6 +57,7 @@ async function whatsappWebhookHandler(req, res) {
   try {
     const pool = await getPool();
 
+    // 1. Raw audit log
     try {
       await pool
         .request()
@@ -61,83 +70,144 @@ async function whatsappWebhookHandler(req, res) {
       console.warn('[whatsappWebhookHandler] raw log insert failed:', logErr.message);
     }
 
-    // ---- Incoming customer message -> auto-create/find ticket by mobile number ----
+    // 2. Incoming customer message
     if (body.clientResponse && typeof body.clientResponse === 'object') {
       const mobile = String(body.clientResponse.sender || '').replace(/\D/g, '');
       const text = String(body.clientResponse.message || '').trim();
+      const mediaUrl = body.clientResponse.fileData?.mediaUrl || null;
+      const messageType = mediaUrl ? 'image' : 'text';
 
       if (!mobile) {
-        console.warn('[whatsappWebhookHandler] clientResponse but no sender', body);
+        console.warn('[whatsappWebhookHandler] clientResponse with no sender:', body);
         return;
       }
 
-      const ticketId = await getOrCreateTicketForMobile(pool, mobile);
+      const displayText = text || (mediaUrl ? '[Image/Attachment]' : '(message)');
 
-      await pool
-        .request()
-        .input('TicketID', sql.VarChar(20), ticketId)
-        .input('SenderType', sql.VarChar(10), 'Customer')
-        .input('SenderName', sql.NVarChar(100), null)
-        .input('MessageText', sql.NVarChar(sql.MAX), text || '(empty)')
-        .input('MessageType', sql.VarChar(20), 'text')
-        .input('MediaURL', sql.NVarChar(500), null)
-        .input('WaMessageId', sql.VarChar(100), null)
-        .input('DeliveryStatus', sql.VarChar(20), 'received')
-        .execute('usp_AddMessage');
+      // A) Update WhatsAppConversations & WhatsAppMessages (WhatsApp Inbox view)
+      try {
+        const convResult = await pool.request()
+          .input('CustomerMobile', sql.VarChar(20), mobile)
+          .input('CustomerName', sql.VarChar(100), null)
+          .input('LastMessageText', sql.VarChar(500), displayText.slice(0, 500))
+          .input('IncrementUnread', sql.Bit, 1)
+          .output('ConversationId', sql.Int)
+          .execute('usp_WhatsApp_UpsertConversation');
 
-      console.log(
-        `[whatsappWebhookHandler] IN from ${mobile} ticket=${ticketId}: ${text.slice(0, 80)}`
-      );
+        const conversationId = convResult.output.ConversationId;
+
+        await pool.request()
+          .input('ConversationId', sql.Int, conversationId)
+          .input('Direction', sql.VarChar(3), 'IN')
+          .input('MessageType', sql.VarChar(20), messageType)
+          .input('Content', sql.NVarChar(sql.MAX), text || (mediaUrl ? '[Image/Attachment]' : null))
+          .input('MediaUrl', sql.VarChar(1000), mediaUrl)
+          .input('RequestId', sql.VarChar(100), null)
+          .input('DeliveryStatus', sql.VarChar(20), 'received')
+          .input('AgentId', sql.Int, null)
+          .input('ClientTempId', sql.VarChar(50), null)
+          .output('MessageId', sql.Int)
+          .execute('usp_WhatsApp_InsertMessage');
+      } catch (waErr) {
+        console.error('[whatsappWebhookHandler] WhatsApp inbox store error:', waErr.message);
+      }
+
+      // B) Update Tickets & TicketMessages (Ticketing view)
+      try {
+        const ticketId = await getOrCreateTicketForMobile(pool, mobile);
+
+        await pool
+          .request()
+          .input('TicketID', sql.VarChar(20), ticketId)
+          .input('SenderType', sql.VarChar(10), 'Customer')
+          .input('SenderName', sql.NVarChar(100), null)
+          .input('MessageText', sql.NVarChar(sql.MAX), displayText)
+          .input('MessageType', sql.VarChar(20), messageType)
+          .input('MediaURL', sql.NVarChar(500), mediaUrl)
+          .input('WaMessageId', sql.VarChar(100), null)
+          .input('DeliveryStatus', sql.VarChar(20), 'received')
+          .execute('usp_AddMessage');
+
+        console.log(
+          `[whatsappWebhookHandler] IN from ${mobile} -> ticket=${ticketId}, text="${displayText.slice(0, 60)}"`
+        );
+      } catch (tktErr) {
+        console.error('[whatsappWebhookHandler] Ticket store error:', tktErr.message);
+      }
+
       return;
     }
 
-    // ---- Status update for a previously sent agent reply ----
+    // 3. Status update for sent message
     if (body.status && body.requestId) {
       const requestId = String(body.requestId);
       const status = String(body.status).toLowerCase();
+      const failedReason = body.failedReason || null;
 
+      // Update TicketMessages
       const ticketResult = await pool
         .request()
         .input('WaMessageId', sql.VarChar(100), requestId)
         .input('DeliveryStatus', sql.VarChar(30), status)
+        .input('FailureReason', sql.NVarChar(500), failedReason)
         .query(`
           UPDATE TicketMessages
-          SET DeliveryStatus = @DeliveryStatus
+          SET DeliveryStatus = @DeliveryStatus,
+              FailureReason = COALESCE(@FailureReason, FailureReason)
           WHERE WaMessageId = @WaMessageId
         `);
 
+      // Update WhatsAppMessages
       const waResult = await pool
         .request()
         .input('RequestId', sql.VarChar(100), requestId)
-        .input('DeliveryStatus', sql.VarChar(30), status)
-        .query(`
-          UPDATE WhatsAppMessages
-          SET DeliveryStatus = @DeliveryStatus
-          WHERE RequestId = @RequestId
-        `);
+        .input('DeliveryStatus', sql.VarChar(20), status)
+        .input('FailureReason', sql.VarChar(500), failedReason)
+        .execute('usp_WhatsApp_UpdateMessageStatusByRequestId');
 
-      const ticketRows = ticketResult.rowsAffected?.[0] || 0;
-      const waRows = waResult.rowsAffected?.[0] || 0;
-      const matched = ticketRows + waRows;
+      let ticketRows = ticketResult.rowsAffected?.[0] || 0;
+      let waRows = waResult.recordset?.length || 0;
 
-      if (matched === 0) {
-        console.warn(
-          `[whatsappWebhookHandler] status ${status} for requestId ${requestId} matched NO rows in TicketMessages or WhatsAppMessages`
-        );
-      } else {
-        console.log(
-          `[whatsappWebhookHandler] status ${status} for requestId ${requestId} (TicketMessages:${ticketRows}, WhatsAppMessages:${waRows})`
-        );
+      // Fallback: if WhatsAppMessages had 0 rows by RequestId but we have receiver mobile
+      if (waRows === 0 && body.receiver) {
+        const last10 = String(body.receiver).replace(/\D/g, '').slice(-10);
+        const fbRes = await pool.request()
+          .input('Last10', sql.VarChar(10), last10)
+          .input('DeliveryStatus', sql.VarChar(20), status)
+          .input('FailureReason', sql.VarChar(500), failedReason)
+          .input('RequestId', sql.VarChar(100), requestId)
+          .query(`
+            WITH TargetMsg AS (
+              SELECT TOP (1) wm.DeliveryStatus, wm.FailureReason, wm.RequestId
+              FROM WhatsAppMessages wm
+              JOIN WhatsAppConversations wc ON wc.ConversationId = wm.ConversationId
+              WHERE RIGHT(wc.CustomerMobile, 10) = @Last10
+                AND wm.Direction = 'OUT'
+              ORDER BY wm.CreatedAt DESC
+            )
+            UPDATE TargetMsg
+            SET DeliveryStatus = @DeliveryStatus,
+                FailureReason = COALESCE(@FailureReason, FailureReason),
+                RequestId = COALESCE(RequestId, @RequestId);
+          `);
+        waRows = fbRes.rowsAffected?.[0] || 0;
       }
+
+      console.log(
+        `[whatsappWebhookHandler] status=${status} for requestId=${requestId} (TicketMessages:${ticketRows}, WhatsAppMessages:${waRows})${failedReason ? ` reason="${failedReason}"` : ''}`
+      );
       return;
     }
 
-    console.warn('[whatsappWebhookHandler] unhandled payload shape', body);
+    console.warn('[whatsappWebhookHandler] unhandled payload shape:', body);
   } catch (err) {
-    console.error('[whatsappWebhookHandler] error:', err.message);
+    console.error('[whatsappWebhookHandler] general error:', err.message);
   }
 }
 
+/**
+ * Debug endpoint to inspect recent raw webhooks
+ */
 async function getRecentWebhookLogs(req, res) {
   try {
     const key = req.query.key || req.headers['x-debug-key'];
@@ -182,5 +252,5 @@ async function getRecentWebhookLogs(req, res) {
 
 module.exports = {
   whatsappWebhookHandler,
-  getRecentWebhookLogs
+  getRecentWebhookLogs,
 };

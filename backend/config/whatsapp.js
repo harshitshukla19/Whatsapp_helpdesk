@@ -1,60 +1,27 @@
-const axios = require('axios');
+const msgclub = require('../services/msgclub.service');
 require('dotenv').config();
 
-// ---- Legacy icloudsms template API (unchanged - used for the ticket ack) ----
-const AUTH_KEY = process.env.ICLOUDSMS_AUTH_KEY;
-const SENDER_ID = process.env.ICLOUDSMS_SENDER_ID;
-const LANGUAGE = process.env.ICLOUDSMS_LANGUAGE || 'en';
-
-// Template endpoints live on v2, separate from the v3 sendChat API used for
-// free-form text (see MSGCLUB_CHAT_URL below / msgclub.service.js).
-const TEMPLATE_BASE_URL =
-  process.env.ICLOUDSMS_TEMPLATE_BASE_URL ||
-  'http://msg.icloudsms.com/rest/services/sendSMS/v2';
-
-// ---- MsgClub v3 chat API (new) - free-form send/reply within the 24h window ----
-const MSGCLUB_CHAT_URL = process.env.MSGCLUB_CHAT_URL || 'http://msg.icloudsms.com/rest/services/sendSMS/v3/sendChat';
-const MSGCLUB_AUTH_KEY = process.env.MSGCLUB_AUTH_KEY;
-const MSGCLUB_SENDER_NUMBER = process.env.MSGCLUB_SENDER_NUMBER;
+const ACK_TEMPLATE_NAME =
+  (process.env.ICLOUDSMS_ACK_TEMPLATE_NAME && process.env.ICLOUDSMS_ACK_TEMPLATE_NAME !== 'ticket_acknowledgement')
+    ? process.env.ICLOUDSMS_ACK_TEMPLATE_NAME
+    : 'welcome_msg';
 
 /**
- * Sends a WhatsApp template message (e.g. ticket acknowledgement) via icloudsms.
- * templateParams is an optional object of placeholder values your template expects
- * (e.g. { "1": ticketId }) - adjust based on how your approved template is structured
- * in the icloudsms/WABA dashboard.
+ * Sends a WhatsApp template message via MsgClub / icloudsms.
  */
-async function sendTemplateMessage({ mobileNumber, templateName, headerMediaLink, templateParams }) {
-  try {
-    const params = {
-      AUTH_KEY,
-      senderId: SENDER_ID,
-      mobileNumbers: mobileNumber,
-      templateName,
-      language: LANGUAGE
-    };
-
-    if (headerMediaLink) params.header_media_link = headerMediaLink;
-    if (templateParams) {
-      // Flatten template params into query params if your BSP expects that -
-      // confirm exact param naming against icloudsms docs / getTemplateReadyJson response.
-      Object.entries(templateParams).forEach(([key, value]) => {
-        params[`var${key}`] = value;
-      });
-    }
-
-const response = await axios.get(`${TEMPLATE_BASE_URL}/sendtemplate`, { params });    return response.data;
-  } catch (err) {
-    console.error('WhatsApp send error:', err.response?.data || err.message);
-    // Do not throw - a failed WhatsApp send should not block ticket creation.
-    return { success: false, error: err.response?.data || err.message };
-  }
+async function sendTemplateMessage({ mobileNumber, templateName, language = 'en', components }) {
+  return msgclub.sendTemplateMessage({
+    mobileNumber,
+    templateName,
+    language,
+    components,
+  });
 }
 
 /**
  * Sends the "ticket created" acknowledgement message with the ticket ID.
  */
 async function sendTicketAcknowledgement(mobileNumber, ticketId) {
-  // ticketId is expected in "TKT-OR-24" format — {{1}} = "24"
   const ticketNumber = String(ticketId).split('-').pop();
 
   const message =
@@ -62,85 +29,61 @@ async function sendTicketAcknowledgement(mobileNumber, ticketId) {
     `Your ticket number is #TKT-OR-${ticketNumber}. A support representative is on it and will reply shortly.\n\n` +
     `Feel free to drop any additional details below in the meantime.`;
 
-  return sendTextMessage(mobileNumber, message);
+  // First try sending as free-form text. If outside window, can fall back to approved template
+  const res = await msgclub.sendTextMessage(mobileNumber, message);
+  if (!res.success && ACK_TEMPLATE_NAME) {
+    return msgclub.sendTemplateMessage({
+      mobileNumber,
+      templateName: ACK_TEMPLATE_NAME,
+      language: 'en',
+    });
+  }
+  return res;
 }
 
 /**
- * Fetches the list of approved WhatsApp templates for this sender.
+ * Fetches the list of approved WhatsApp templates.
  */
 async function getTemplateList(status = 'APPROVED') {
-  const response = await axios.get(`${TEMPLATE_BASE_URL}/getTemplateList`, {
-    params: { AUTH_KEY, senderId: SENDER_ID, status }
-  });
-  return response.data;
+  return msgclub.getApprovedTemplates(status);
 }
 
 /**
- * Sends a free-form WhatsApp TEXT message using MsgClub's v3 sendChat API.
- * This only works within the 24-hour customer-service window (i.e. the
- * customer must have messaged in the last 24h) - per MsgClub support, use
- * sendTemplateMessage() above for anything outside that window.
- *
- * Docs: Developer -> API -> WhatsApp Chat -> Get API (in the MsgClub panel)
+ * Sends a free-form WhatsApp text message via MsgClub v3 sendChat.
  */
 async function sendTextMessage(mobileNumber, text) {
-  try {
-    const response = await axios.post(
-      `${MSGCLUB_CHAT_URL}?AUTH_KEY=${MSGCLUB_AUTH_KEY}`,
-      {
-        senderId: MSGCLUB_SENDER_NUMBER,
-        component: {
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: mobileNumber,
-          type: 'text',
-          text: {
-            preview_url: true,
-            body: text
-          }
-        }
-      }
-    );
-    return response.data;
-  } catch (err) {
-    console.error('MsgClub sendTextMessage error:', err.response?.data || err.message);
-    return { success: false, error: err.response?.data || err.message };
-  }
+  return msgclub.sendTextMessage(mobileNumber, text);
 }
 
 /**
- *
- * @param {Object} params
- * @param {string} params.mobileNumber
- * @param {'image'|'video'|'document'|'audio'} params.mediaType
- * @param {string} params.mediaLink - publicly reachable URL to the file
- * @param {string} [params.caption] - not applicable to audio
+ * Sends a media message via MsgClub v3 sendChat.
+ * Supports both positional args: (mobileNumber, mediaType, mediaUrl, caption)
+ * and object arg: ({ mobileNumber, mediaType, mediaLink, caption })
  */
-async function sendMediaMessage({ mobileNumber, mediaType, mediaLink, caption }) {
-  try {
-    const mediaObject = { link: mediaLink };
-    if (caption && mediaType !== 'audio') {
-      mediaObject.caption = caption;
-    }
-
-    const response = await axios.post(
-      `${MSGCLUB_CHAT_URL}?AUTH_KEY=${MSGCLUB_AUTH_KEY}`,
-      {
-        senderId: MSGCLUB_SENDER_NUMBER,
-        component: {
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: mobileNumber,
-          type: mediaType,
-          [mediaType]: mediaObject
-        }
-      }
+async function sendMediaMessage(arg1, arg2, arg3, arg4) {
+  if (typeof arg1 === 'object' && arg1 !== null) {
+    return msgclub.sendMediaMessage(
+      arg1.mobileNumber,
+      arg1.mediaType,
+      arg1.mediaLink || arg1.mediaUrl,
+      arg1.caption
     );
-    return response.data;
-  } catch (err) {
-    console.error('MsgClub sendMediaMessage error:', err.response?.data || err.message);
-    return { success: false, error: err.response?.data || err.message };
   }
+  return msgclub.sendMediaMessage(arg1, arg2, arg3, arg4);
+}
+
+/**
+ * Sends a location message via MsgClub v3 sendChat.
+ */
+async function sendLocationMessage(mobileNumber, location) {
+  return msgclub.sendLocationMessage(mobileNumber, location);
+}
+
+/**
+ * Sends a contact card via MsgClub v3 sendChat.
+ */
+async function sendContactMessage(mobileNumber, contact) {
+  return msgclub.sendContactMessage(mobileNumber, contact);
 }
 
 module.exports = {
@@ -148,5 +91,7 @@ module.exports = {
   sendTicketAcknowledgement,
   getTemplateList,
   sendTextMessage,
-  sendMediaMessage
+  sendMediaMessage,
+  sendLocationMessage,
+  sendContactMessage,
 };
